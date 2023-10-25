@@ -1,0 +1,41 @@
+import React, { useState } from 'react'
+import FacebookLoginAuth from './FacebookLoginAuth';
+import GoogleLoginAuth from './GoogleLoginAuth';
+import MicrosoftLoginAuth from './MicrosoftLoginAuth';
+import Logout from './Logout';
+import "../App.css";
+import Comments from '../comments/Comments';
+
+function Login() {
+  const [isLogin,setIsLogin]=useState(false)
+  return (
+    <div>
+      {!isLogin&&<><button onClick={()=>{
+        setIsLogin(true)
+      }}>Login</button>
+      
+      </>
+      }
+      {isLogin&&(sessionStorage.getItem('email')==null?
+      <>
+        <div className="modal-overlay">
+          <div className="modal">
+          <span className="close-btn" onClick={()=>{
+            setIsLogin(false)
+          }}>
+              &times;
+            </span>
+      <FacebookLoginAuth /><GoogleLoginAuth /><MicrosoftLoginAuth />
+          </div>
+        </div>
+      </>:
+       <>
+      <Logout onClick={()=>{setIsLogin(false)}}/>
+      <h1>Welcome {sessionStorage.getItem('email')}</h1>
+      <Comments/>
+      </> 
+      )}
+    </div>
+  )
+}
+export default Login;

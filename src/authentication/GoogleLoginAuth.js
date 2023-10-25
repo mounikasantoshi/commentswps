@@ -1,0 +1,47 @@
+import React from 'react';
+import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
+import jwt_decode from "jwt-decode";
+import { useParams } from 'react-router-dom/dist';
+
+const GoogleLoginAuth = ({closemodel}) => {
+  const params = useParams();
+  const handleEmailSubmit = async (email) => {
+    try {
+      const response = await fetch(`http://devblogsarchiv.wpengine.com/${params.blog_name}/wp-json/custom-user-handler/v1/user-loginchecks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      if (data.exists||data.success) {
+      sessionStorage.setItem('email',email);
+      sessionStorage.setItem('loginType','Google');
+      closemodel()          
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  return (
+    <div className='margin'>
+    <GoogleOAuthProvider clientId="581820892116-78t4gs8irpbq2fulbetphuhg1964hge0.apps.googleusercontent.com">
+      <GoogleLogin 
+      width='220px'
+      onSuccess={(credentialResponse) => {
+        try {
+          var decoded = jwt_decode(credentialResponse.credential);
+          // var decodedHeader = jwt_decode(credentialResponse.credential, { header: true });
+          handleEmailSubmit(decoded.email)
+        } catch (error) {
+          console.error('Error decoding JWT:', error);
+        }
+      }} />
+  </GoogleOAuthProvider>
+  </div>
+  );
+};
+
+export default GoogleLoginAuth;

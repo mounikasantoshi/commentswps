@@ -1,0 +1,163 @@
+import { useState, useEffect } from "react";
+import CommentForm from "./CommentForm";
+import Comment from "./Comment-new";
+import { useParams } from 'react-router-dom';
+import Login from '../authentication/Login';
+
+import {
+  //getComments as getCommentsApi,
+  getDevBlogsComments as getCommentsApi,
+  createComment as createCommentApi,
+  updateComment as updateCommentApi,
+  deleteComment as deleteCommentApi,
+} from "../api";
+
+const Comments = ({ commentsUrl, currentUserId }) => {
+  const [backendComments, setBackendComments] = useState([]);
+  const [activeComment, setActiveComment] = useState(null);
+  const params = useParams();
+  const [error, setError] = useState(false);
+  const [state, setState] = useState('');
+  const [email, setEmail] = useState('');
+
+  console.log('activeComment',activeComment);
+  console.log("params", params);
+  //const [devblogsComment, setDevBlogsComment] = useState(null);
+  // const rootComments = backendComments.filter(
+  //   (backendComment) => backendComment.parentId === null
+  // );
+  //console.log(devblogsComment);
+  // const getReplies = (commentId) =>
+  //   backendComments
+  //     .filter((backendComment) => backendComment.parentId === commentId)
+  //     .sort(
+  //       (a, b) =>
+  //         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  //     );
+
+  
+  const addComment = (text, parentId) => {
+    createCommentApi(text, parentId, params).then((comment) => {
+      //console.log("comment api return", comment);
+        // const updatedBackendComments = backendComments.map((backendComment) => {
+        //   //console.log("parentId", parentId);
+        //   //console.log("backendComment.id", backendComment.id);
+        //   if (backendComment.id === "Y29tbWVudDoyODE3OA==") {
+        //     return { ...backendComment.replies.nodes, comment };
+        //   }
+        //   return { ...backendComment, comment };
+        // });
+        // //return { ...backendComment, body: text };
+        
+        // setBackendComments(updatedBackendComments);
+        //setBackendComments(comment, ...backendComment);
+        apiFun();
+        setActiveComment(null);
+    });
+  };
+
+  const updateComment = (text, commentId) => {
+    console.log("text", text);
+    console.log("commentId", commentId);
+    updateCommentApi(text, commentId, params).then(() => {
+      const updatedBackendComments = backendComments.map((backendComment) => {
+        if (backendComment.id === commentId) {
+          return { ...backendComment, content: text };
+        }
+        return backendComment;
+      });
+      setBackendComments(updatedBackendComments);
+      setActiveComment(null);
+    });
+  };
+  const deleteComment = (commentId) => {
+    if (window.confirm("Are you sure you want to remove comment?")) {
+      deleteCommentApi().then(() => {
+        const updatedBackendComments = backendComments.filter(
+          (backendComment) => backendComment.id !== commentId
+        );
+        setBackendComments(updatedBackendComments);
+      });
+    }
+  };
+
+  const apiFun = () => {
+    getCommentsApi(params).then((response) => {
+      //console.log("data", response);
+      if(response.post) {
+       setBackendComments(response.post.comments.nodes);
+      } else {
+        //console.error('Error:', "Comments not found");
+        setState('error');
+        setError("Comments not found");
+      }
+    }).catch((err) => {
+      //console.error('Error:', err);
+      setState('error');
+      setError(err);
+    });
+  } 
+
+  useEffect(() => {
+    //console.log("Inside comments js", getCommentsApi());
+    //   getCommentsApi(params).then((response) => {
+    //     if(response.post) {
+    //      setBackendComments(response.post.comments.nodes);
+    //     } else {
+    //       console.error('Error:', "Comments not found");
+    //       setState('error');
+    //       setError("Comments not found");
+    //     }
+    //   }).catch((err) => {
+    //     console.error('Error:', err);
+    //     setState('error');
+    //     setError(err);
+    // });
+    apiFun();
+      // const commentResult = await getCommentsApi();
+      // if(commentResult) {
+        //setBackendComments(getCommentsApi());
+     // }
+  },[params]);
+
+  useEffect(() => {
+    if (state === 'error') {
+      return (
+          <h1>
+              {error.toString()}
+          </h1>
+      );
+    }
+  },[state, error])
+  //console.log("backendComments",backendComments); 
+  useEffect(() => {
+    console.log("backendComments",backendComments);
+  }, [backendComments])
+
+  return (
+    <div className="comments">
+      <Login />
+      <h3 className="comments-title">Comments</h3>
+      <div className="comment-form-title">Write comment</div>
+      <CommentForm submitLabel="Write" handleSubmit={addComment} />
+      <div className="comments-container">
+        {backendComments?.map((rootComment) => (
+          <Comment
+            key={rootComment.id}
+            comment={rootComment}
+            replies={rootComment.replies}
+            //replies={getReplies(rootComment.id)}
+            activeComment={activeComment}
+            setActiveComment={setActiveComment}
+            addComment={addComment}
+            deleteComment={deleteComment}
+            updateComment={updateComment}
+            currentUserId={currentUserId}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default Comments;
